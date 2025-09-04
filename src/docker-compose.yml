@@ -1,0 +1,142 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  eshop-db:
+    image: postgres:15.3
+    platform: linux/amd64
+    container_name: eshop-database
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-eshopdb}
+      POSTGRES_USER: ${POSTGRES_USER:-eshopuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_eshopdb:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+    networks:
+      - eshop-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eshopuser} -d ${POSTGRES_DB:-eshopdb}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    command: postgres -c 'max_connections=100' -c 'shared_buffers=128MB'
+
+  # Redis Cache
+  eshop-redis:
+    image: redis:7.0
+    platform: linux/amd64
+    container_name: eshop-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - eshop-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Main Application API
+  eshop-api:
+    build:
+      context: .
+      dockerfile: Bootstrapper/Api/Dockerfile
+      args:
+        BUILD_CONFIGURATION: Release
+    platform: linux/amd64
+    container_name: eshop-application
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ASPNETCORE_URLS: http://+:8080;https://+:8081
+      ASPNETCORE_HTTPS_PORT: 8081
+      # Database Configuration using environment variables
+      ConnectionStrings__DefaultConnection: "Host=eshop-db;Port=5432;Database=${POSTGRES_DB:-eshopdb};Username=${POSTGRES_USER:-eshopuser};Password=${POSTGRES_PASSWORD};Include Error Detail=true"
+      ConnectionStrings__CatalogConnection: "Host=eshop-db;Port=5432;Database=${POSTGRES_DB:-eshopdb};Username=${POSTGRES_USER:-eshopuser};Password=${POSTGRES_PASSWORD};Include Error Detail=true"
+      ConnectionStrings__BasketConnection: "Host=eshop-db;Port=5432;Database=${POSTGRES_DB:-eshopdb};Username=${POSTGRES_USER:-eshopuser};Password=${POSTGRES_PASSWORD};Include Error Detail=true"
+      ConnectionStrings__OrderingConnection: "Host=eshop-db;Port=5432;Database=${POSTGRES_DB:-eshopdb};Username=${POSTGRES_USER:-eshopuser};Password=${POSTGRES_PASSWORD};Include Error Detail=true"
+      # Redis Configuration
+      ConnectionStrings__Redis: "eshop-redis:6379"
+      # Logging
+      Logging__LogLevel__Default: ${LOG_LEVEL:-Information}
+      Logging__LogLevel__Microsoft: Warning
+      Logging__LogLevel__Microsoft.AspNetCore: Warning
+    ports:
+      - "${API_HTTP_PORT:-8080}:8080"
+      - "${API_HTTPS_PORT:-8081}:8081"
+    depends_on:
+      eshop-db:
+        condition: service_healthy
+      eshop-redis:
+        condition: service_healthy
+    networks:
+      - eshop-network
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # pgAdmin for database management
+  eshop-pgadmin:
+    image: dpage/pgadmin4:7.8
+    platform: linux/amd64
+    container_name: eshop-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@eshop.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    depends_on:
+      - eshop-db
+    networks:
+      - eshop-network
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  # Seq for structured logging
+  eshop-seq:
+    image: datalust/seq:2023.4
+    platform: linux/amd64
+    container_name: eshop-seq
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: Y
+    ports:
+      - "${SEQ_PORT:-5341}:80"
+    volumes:
+      - seq_data:/data
+    networks:
+      - eshop-network
+
+networks:
+  eshop-network:
+    driver: bridge
+    name: eshop-network
+
+volumes:
+  postgres_eshopdb:
+    driver: local
+    name: eshop_postgres_data
+  redis_data:
+    driver: local
+    name: eshop_redis_data
+  pgadmin_data:
+    driver: local
+    name: eshop_pgadmin_data
+  seq_data:
+    driver: local
+    name: eshop_seq_data

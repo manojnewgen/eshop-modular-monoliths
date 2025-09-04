@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" Sdk="Microsoft.Docker.Sdk">
+  <PropertyGroup Label="Globals">
+    <ProjectVersion>2.1</ProjectVersion>
+    <DockerTargetOS>Linux</DockerTargetOS>
+    <DockerPublishLocally>False</DockerPublishLocally>
+    <ProjectGuid>81dded9d-158b-e303-5f62-77a2896d2a5a</ProjectGuid>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include=".env.template" />
+    <None Include=".gitignore" />
+    <None Include="Complete-Product-Handlers-Guide.md" />
+    <None Include="Configuration\appsettings.Development.json" />
+    <None Include="Configuration\appsettings.Production.json" />
+    <None Include="docker-compose.override.yml">
+      <DependentUpon>docker-compose.yml</DependentUpon>
+    </None>
+    <None Include="docker-compose.yml" />
+    <None Include=".dockerignore" />
+    <None Include="docker-diagnostic.ps1" />
+    <None Include="docker-diagnostic.sh" />
+    <None Include="docker-manage.bat" />
+    <None Include="docker-manage.sh" />
+    <None Include="Docker-Manifest-Fix-Guide.md" />
+    <None Include="Docker-Platform-Fix-Guide.md" />
+    <None Include="Docker-README.md" />
+    <None Include="DOCKER-SECURITY.md" />
+    <None Include="Documentation\Centralized-Logging-Guide.md" />
+    <None Include="Documentation\CustomExceptionHandler-Guide.md" />
+    <None Include="Documentation\GlobalUsings-Implementation-Guide.md" />
+    <None Include="Domain-Event-Handlers-Complete-Guide.md" />
+    <None Include="Domain-Event-Handlers-Summary.md" />
+    <None Include="env.template" />
+    <None Include="Examples\SchemaIsolation\SCHEMA-ISOLATION-GUIDE.md" />
+    <None Include="Examples\SchemaIsolation\SchemaIsolationDemo.cs" />
+    <None Include="init-scripts\01-init-database.sh" />
+    <None Include="Mapster-Integration-Guide.md" />
+    <None Include="Mapster-Integration-Summary.md" />
+    <None Include="Migration-Extensions-Guide.md" />
+    <None Include="Migration-Extensions-Implementation-Summary.md" />
+    <None Include="PostgreSQL-Health-Fix.md" />
+    <None Include="SaveChanges-Interceptor-Guide.md" />
+    <None Include="SaveChanges-Interceptor-Summary.md" />
+    <None Include="Scripts\CleanupGlobalUsings.ps1" />
+    <None Include="setup.sh" />
+    <None Include="Visual-Studio-Docker-Fix.md" />
+  </ItemGroup>
+</Project>

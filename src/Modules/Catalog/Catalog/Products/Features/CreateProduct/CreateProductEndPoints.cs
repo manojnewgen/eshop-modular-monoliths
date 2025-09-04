@@ -1,0 +1,32 @@
+﻿using Carter;
+using Catalog.Products.Dtos;
+using Mapster;
+using MediatR;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+namespace Catalog.Products.Features.CreateProduct
+{
+    public record CreateProductRequest(
+       ProductDto Product);
+
+    public record CreateProductResponse(
+       Guid ProductId);
+    public class CreateProductEndPoints : ICarterModule
+    {
+        public void AddRoutes(IEndpointRouteBuilder app)
+        {
+            app.MapPost("/product", async (CreateProductRequest request, ISender sender) =>
+            {
+                var command = request.Adapt<CreateProductCommand>();
+                var result = await sender.Send(command);
+                var response = result.Adapt<CreateProductResponse>();
+                return Results.Created($"/product/{response.ProductId}", response);
+            }).WithName("CreateProduct")
+              .Produces<CreateProductResponse>(StatusCodes.Status201Created)
+              .ProducesProblem(StatusCodes.Status400BadRequest)
+              .WithSummary("Create product")
+              .WithDescription("Create Product");
+        }
+    }
+}
