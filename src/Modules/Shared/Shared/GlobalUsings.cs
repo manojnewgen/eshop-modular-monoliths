@@ -28,4 +28,4 @@ global using Shared.DDD;
 global using Shared.CQRS;
 global using Shared.Mapping;
 global using Shared.Exceptions;
-global using Shared.Behaviors;
+global using Shared.Behaviors;global using Shared.Behaviors;

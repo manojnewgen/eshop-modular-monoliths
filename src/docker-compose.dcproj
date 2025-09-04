@@ -12,6 +12,8 @@
     <None Include="Complete-Product-Handlers-Guide.md" />
     <None Include="Configuration\appsettings.Development.json" />
     <None Include="Configuration\appsettings.Production.json" />
+    <None Include="Configuration\appsettings.Serilog.json" />
+    <None Include="docker-compose.logging.yml" />
     <None Include="docker-compose.override.yml">
       <DependentUpon>docker-compose.yml</DependentUpon>
     </None>
@@ -28,6 +30,9 @@
     <None Include="Documentation\Centralized-Logging-Guide.md" />
     <None Include="Documentation\CustomExceptionHandler-Guide.md" />
     <None Include="Documentation\GlobalUsings-Implementation-Guide.md" />
+    <None Include="Documentation\Primary-Constructor-Implementation.md" />
+    <None Include="Documentation\Quick-Serilog-Setup.md" />
+    <None Include="Documentation\Serilog-Seq-Implementation-Guide.md" />
     <None Include="Domain-Event-Handlers-Complete-Guide.md" />
     <None Include="Domain-Event-Handlers-Summary.md" />
     <None Include="env.template" />

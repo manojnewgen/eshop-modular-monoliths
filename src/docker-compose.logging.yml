@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  seq:
+    image: datalust/seq:latest
+    container_name: eShop-seq
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - "5341:80"
+    volumes:
+      - seq-data:/data
+    restart: unless-stopped
+    networks:
+      - eshop-network
+
+  postgres:
+    image: postgres:15
+    container_name: eShop-postgres
+    environment:
+      POSTGRES_DB: EShop
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - eshop-network
+
+volumes:
+  seq-data:
+  postgres-data:
+
+networks:
+  eshop-network:
+    driver: bridge

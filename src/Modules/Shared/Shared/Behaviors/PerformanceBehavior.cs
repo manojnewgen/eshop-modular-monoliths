@@ -8,16 +8,9 @@ namespace Shared.Behaviors
     /// </summary>
     /// <typeparam name="TRequest">The request type</typeparam>
     /// <typeparam name="TResponse">The response type</typeparam>
-    public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    public class PerformanceBehavior<TRequest, TResponse>(ILogger<PerformanceBehavior<TRequest, TResponse>> logger) : IPipelineBehavior<TRequest, TResponse>
         where TRequest : notnull
     {
-        private readonly ILogger<PerformanceBehavior<TRequest, TResponse>> _logger;
-
-        public PerformanceBehavior(ILogger<PerformanceBehavior<TRequest, TResponse>> logger)
-        {
-            _logger = logger;
-        }
-
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             var requestName = typeof(TRequest).Name;
@@ -59,22 +52,22 @@ namespace Shared.Behaviors
             // Log based on performance characteristics
             if (elapsedMs > VerySlowRequestThreshold)
             {
-                _logger.LogWarning("?? Very slow request: {RequestName} took {ElapsedMs}ms and used {MemoryUsed:N0} bytes",
+                logger.LogWarning("?? Very slow request: {RequestName} took {ElapsedMs}ms and used {MemoryUsed:N0} bytes",
                     requestName, elapsedMs, memoryUsed);
             }
             else if (elapsedMs > SlowRequestThreshold)
             {
-                _logger.LogWarning("?? Slow request: {RequestName} took {ElapsedMs}ms and used {MemoryUsed:N0} bytes",
+                logger.LogWarning("?? Slow request: {RequestName} took {ElapsedMs}ms and used {MemoryUsed:N0} bytes",
                     requestName, elapsedMs, memoryUsed);
             }
             else if (memoryUsed > HighMemoryUsage)
             {
-                _logger.LogInformation("?? High memory usage: {RequestName} used {MemoryUsed:N0} bytes in {ElapsedMs}ms",
+                logger.LogInformation("?? High memory usage: {RequestName} used {MemoryUsed:N0} bytes in {ElapsedMs}ms",
                     requestName, memoryUsed, elapsedMs);
             }
-            else if (_logger.IsEnabled(LogLevel.Debug))
+            else if (logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogDebug("?? Performance: {RequestName} completed in {ElapsedMs}ms using {MemoryUsed:N0} bytes",
+                logger.LogDebug("?? Performance: {RequestName} completed in {ElapsedMs}ms using {MemoryUsed:N0} bytes",
                     requestName, elapsedMs, memoryUsed);
             }
 
