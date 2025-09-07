@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Basket.Data;
 using Shared.Data.Extensions;
+using Basket.Data.Repositories;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Basket
 {
@@ -17,6 +19,21 @@ namespace Basket
         /// <returns>The service collection for method chaining</returns>
         public static IServiceCollection AddBasketModule(this IServiceCollection services, IConfiguration configuration)
         {
+            services.AddScoped<IBasketRepository, BasketRepository>();
+
+            //services.AddScoped<IBasketRepository>(provider=>
+            //{
+            //    var BaseBasketRepository = provider.GetRequiredService<BasketRepository>();
+            //    return new CachedBasketRepository(BaseBasketRepository, provider.GetRequiredService<IDistributedCache>());
+            //});
+
+            services.Decorate<IBasketRepository, CachedBasketRepository>();
+
+            // api end point service
+            // aplication use cases services
+
+            // Data -infra strcture related services 
+
             // Register DbContext with connection string
             services.AddDbContext<BasketDbContext>(options =>
             {

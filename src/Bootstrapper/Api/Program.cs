@@ -5,10 +5,23 @@ using Shared.Data.Extensions;
 using Shared.Extentions;
 using Shared.Exceptions.Extensions;
 using Carter;
+using Shared.Behaviors;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddCarterWithAssemblies(typeof(CatalogModule).Assembly);
+var catlogAssembly = typeof(CatalogModule).Assembly;
+var basketsAssembly = typeof(CatalogModule).Assembly;
+
+//common sevices: carter, Mediater, FluentValidation
+builder.Services.AddCarterWithAssemblies(catlogAssembly, basketsAssembly);
+
+builder.Services.AddMediatRWithAssemblies(catlogAssembly, basketsAssembly);
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+});
+
 
 // Add services to the container
 builder.Services.AddCatalogModule(builder.Configuration)

@@ -16,4 +16,10 @@
     <ProjectReference Include="..\..\Shared\Shared\Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Basket\EventHandler\" />
+    <Folder Include="Basket\Exceptions\" />
+    <Folder Include="Basket\Features\UpdateItemInBasket\" />
+  </ItemGroup>
+
 </Project>

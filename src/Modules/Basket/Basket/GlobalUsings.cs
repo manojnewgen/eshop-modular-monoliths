@@ -28,3 +28,6 @@ global using Carter;
 global using Shared.DDD;
 global using Shared.CQRS;
 global using Shared.Mapping;
+
+using Basket.Basket.Modules;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
