@@ -1,5 +1,7 @@
 using Basket.Basket.DTOs;
 using Basket.Data.Repositories;
+using Catalog.Contracts.Products.DTOs;
+using Catalog.Contracts.Products.Features.GetProductById;
 using Shared.Exceptions;
 using System;
 using System.Threading;
@@ -20,7 +22,7 @@ namespace Basket.Basket.Features.AddItemToBasket
         ShoppingCartDto UpdatedBasket
     );
 
-    public class AddItemToBasketHandler(IBasketRepository basketRepository, IMappingService mappingService) 
+    public class AddItemToBasketHandler(IBasketRepository basketRepository, IMappingService mappingService, ISender sender) 
         : ICommandHandler<AddItemToBasketCommand, AddItemToBasketResult>
     {
         public async Task<AddItemToBasketResult> Handle(AddItemToBasketCommand command, CancellationToken cancellationToken)
@@ -30,12 +32,17 @@ namespace Basket.Basket.Features.AddItemToBasket
             if (cart == null)
                 throw new NotFoundException(nameof(ShoppingCart), command.BasketId);
 
+            var result = await sender.Send(new GetProductByIdQuery(command.ProductId), cancellationToken);
+
+            if (result?.ProductDto == null)
+                throw new NotFoundException(nameof(ProductDto), command.ProductId);
+
             cart.AddItem(
                 command.ProductId,
                 command.Quantity,
                 command.Color,
-                command.Price,
-                command.ProductName
+                result.ProductDto.Price, // Fix CS1503: pass decimal, not string
+                result.ProductDto.Name   // Fix CS8602: null check above ensures safe dereference
             );
 
             await basketRepository.SaveChangesAsync(cart.UserName, cancellationToken);
