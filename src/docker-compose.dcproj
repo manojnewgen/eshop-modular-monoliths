@@ -6,6 +6,16 @@
     <DockerPublishLocally>False</DockerPublishLocally>
     <ProjectGuid>81dded9d-158b-e303-5f62-77a2896d2a5a</ProjectGuid>
   </PropertyGroup>
+  <!-- Add ProjectReference items for all .csproj files -->
+  <ItemGroup>
+    <ProjectReference Include="Bootstrapper\Api\Api.csproj" />
+    <ProjectReference Include="Modules\Catalog\Catalog\Catalog.csproj" />
+    <ProjectReference Include="Modules\Catalog\Catalog.Contracts\Catalog.Contracts.csproj" />
+    <ProjectReference Include="Modules\Basket\Basket\Basket.csproj" />
+    <ProjectReference Include="Modules\Oredering\Odering\Odering.csproj" />
+    <ProjectReference Include="Shared\Shared\Shared.csproj" />
+    <ProjectReference Include="Shared\Shared.Contracts\Shared.Contracts.csproj" />
+  </ItemGroup>
   <ItemGroup>
     <None Include=".env.template" />
     <None Include=".gitignore" />
@@ -36,6 +46,7 @@
     <None Include="Domain-Event-Handlers-Complete-Guide.md" />
     <None Include="Domain-Event-Handlers-Summary.md" />
     <None Include="env.template" />
+    <None Include="eShop-ModularMonolith.sln" />
     <None Include="Examples\SchemaIsolation\SCHEMA-ISOLATION-GUIDE.md" />
     <None Include="Examples\SchemaIsolation\SchemaIsolationDemo.cs" />
     <None Include="init-scripts\01-init-database.sh" />

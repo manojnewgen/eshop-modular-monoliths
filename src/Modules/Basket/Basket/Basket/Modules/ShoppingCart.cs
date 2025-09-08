@@ -2,9 +2,9 @@
 {
     public class ShoppingCart: Aggregate<Guid>
     {
-        public string UserName { get; private set; }
+        public string UserName { get; private set; } = default!;
 
-        private readonly List<ShoppingCartItem> _items=new List<ShoppingCartItem>();
+        private readonly List<ShoppingCartItem> _items = new List<ShoppingCartItem>();
 
         public IReadOnlyList<ShoppingCartItem> Items => _items.AsReadOnly();
         public decimal TotalPrice => _items.Sum(i => i.Price * i.Quantity);
@@ -20,7 +20,7 @@
             return cart;
         }
 
-        public void AddItem(Guid productId, int quantity, string color, decimal price, string productname)
+        public void AddItem(Guid productId, int quantity, string color, decimal price, string productName)
         {
             var existingItem = _items.FirstOrDefault(i => i.ProductId == productId && i.Color == color);
             if (existingItem != null)
@@ -29,7 +29,8 @@
             }
             else
             {
-                var newItem = new ShoppingCartItem(this.Id, productId, quantity, color);
+                // Fixed: Use the correct constructor with all required parameters
+                var newItem = new ShoppingCartItem(this.Id, productId, quantity, price, productName, color);
                 _items.Add(newItem);
             }
             //AddDomainEvent(new ShoppingCartItemAddedEvent(this, productId, quantity));

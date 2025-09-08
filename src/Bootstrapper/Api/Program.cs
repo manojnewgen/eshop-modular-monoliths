@@ -10,7 +10,7 @@ using Shared.Behaviors;
 var builder = WebApplication.CreateBuilder(args);
 
 var catlogAssembly = typeof(CatalogModule).Assembly;
-var basketsAssembly = typeof(CatalogModule).Assembly;
+var basketsAssembly = typeof(BasketModule).Assembly; // Fixed: was typeof(CatalogModule).Assembly
 
 //common sevices: carter, Mediater, FluentValidation
 builder.Services.AddCarterWithAssemblies(catlogAssembly, basketsAssembly);
