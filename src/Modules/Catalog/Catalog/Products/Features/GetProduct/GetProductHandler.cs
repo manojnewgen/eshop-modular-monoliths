@@ -1,9 +1,4 @@
-using Catalog.Products.Dtos;
-using Catalog.Data;
-using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-using Shared.CQRS;
-using Shared.Mapping;
+
 
 namespace Catalog.Products.Features.GetProduct
 {

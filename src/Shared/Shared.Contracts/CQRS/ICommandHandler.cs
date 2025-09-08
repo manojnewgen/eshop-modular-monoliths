@@ -1,6 +1,6 @@
 ﻿using MediatR;
 
-namespace Shared.CQRS
+namespace Shared.Contracts.CQRS
 {
     // Fix: Add generic constraint to ensure TCommand implements ICommand<Unit>
     public interface ICommandHandler<in TCommand> : ICommandHandler<TCommand, Unit>

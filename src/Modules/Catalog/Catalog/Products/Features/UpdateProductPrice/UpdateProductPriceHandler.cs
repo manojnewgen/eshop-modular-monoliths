@@ -1,8 +1,3 @@
-using Catalog.Data;
-using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-using Shared.CQRS;
-
 namespace Catalog.Products.Features.UpdateProductPrice
 {
     /// <summary>

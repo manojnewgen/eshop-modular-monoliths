@@ -1,4 +1,4 @@
-// Global usings for the Shared module
+// Global usings for the Shared module - Foundation for all other modules
 // Common .NET namespaces
 global using System;
 global using System.Collections.Generic;
@@ -25,7 +25,7 @@ global using FluentValidation;
 
 // Shared module namespaces
 global using Shared.DDD;
-global using Shared.CQRS;
+global using Shared.Contracts.CQRS;
 global using Shared.Mapping;
 global using Shared.Exceptions;
 global using Shared.Behaviors;

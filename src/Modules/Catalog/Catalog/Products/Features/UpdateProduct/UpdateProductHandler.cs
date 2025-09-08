@@ -3,13 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Catalog.Products.Dtos;
-using Catalog.Data;
-using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-using Shared.CQRS;
-using Shared.Mapping;
-
 namespace Catalog.Products.Features.UpdateProduct
 {
     /// <summary>

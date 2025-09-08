@@ -1,9 +1,3 @@
-using Catalog.Products.Dtos;
-using Catalog.Data;
-using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-using Shared.CQRS;
-
 namespace Catalog.Products.Features.GetProductsByCategory
 {
     /// <summary>

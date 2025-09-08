@@ -1,5 +1,4 @@
 using Basket.Basket.DTOs;
-using Basket.Basket.Modules;
 using Basket.Data.Repositories;
 using Shared.Exceptions;
 using System;

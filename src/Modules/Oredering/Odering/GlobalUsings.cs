@@ -26,5 +26,11 @@ global using Carter;
 
 // Shared module namespaces (inherited from Shared project reference)
 global using Shared.DDD;
-global using Shared.CQRS;
+global using Shared.Contracts.CQRS;
 global using Shared.Mapping;
+global using Shared.Exceptions;
+
+// Ordering module namespaces would go here when implemented
+// global using Odering.Data;
+// global using Odering.Orders.Dtos;
+// global using Odering.Orders.Events;

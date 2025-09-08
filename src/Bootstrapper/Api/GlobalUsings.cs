@@ -27,14 +27,14 @@ global using FluentValidation;
 
 // Shared module namespaces
 global using Shared.DDD;
-global using Shared.CQRS;
+global using Shared.Contracts.CQRS;
 global using Shared.Mapping;
 global using Shared.Extentions;
 global using Shared.Exceptions;
 global using Shared.Exceptions.Extensions;
+global using Shared.Data.Extensions;
+
+// Module references
 global using Catalog;
 global using Basket;
 global using Odering;
-global using Shared.Data.Extensions;
-global using Shared.Extentions;
-global using Carter;

@@ -1,7 +1,4 @@
-﻿
-using FluentValidation;
-
-namespace Shared.Behaviors
+﻿namespace Shared.Behaviors
 {
     public class ValidationBehavior<TRequest, TResponse>
         (IEnumerable<IValidator<TRequest>> validators) : IPipelineBehavior<TRequest, TResponse>

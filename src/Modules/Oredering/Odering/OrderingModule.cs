@@ -1,11 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Shared.Data.Extensions;
-using System;
-using System.Threading.Tasks;
-
-namespace Odering
+﻿namespace Odering
 {
     public static class OrderingModule
     {

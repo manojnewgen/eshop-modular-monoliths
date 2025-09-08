@@ -1,10 +1,4 @@
-﻿using Catalog.Products.Dtos;
-using Catalog.Data;
-using Catalog.Products;
-using Microsoft.Extensions.Logging;
-using Shared.CQRS;
-using Shared.Mapping;
-using FluentValidation;
+﻿using FluentValidation;
 
 namespace Catalog.Products.Features.CreateProduct
 {

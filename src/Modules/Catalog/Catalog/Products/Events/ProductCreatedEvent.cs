@@ -1,5 +1,3 @@
-using Shared.DDD;
-
 namespace Catalog.Products.Events
 {
     public record ProductCreatedEvent(

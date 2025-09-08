@@ -1,4 +1,3 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36212.18
@@ -12,8 +11,14 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api", "Bootstrapper\Api\Api.csproj", "{A62913CA-D77B-4C42-9CC4-166BC2C7B779}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Basket", "Basket", "{66D43258-DBA1-42E0-BD2E-831F3B07E866}"
+	ProjectSection(SolutionItems) = preProject
+		GlobalUsings.cs = GlobalUsings.cs
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Catalog", "Catalog", "{5E9BDFE5-49F1-4490-9A47-7C0FC2D08F8F}"
+	ProjectSection(SolutionItems) = preProject
+		Modules\Catalog\Catalog\GlobalUsings.cs = Modules\Catalog\Catalog\GlobalUsings.cs
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Ordering", "Ordering", "{9B5FC216-A373-4DDF-B922-93EC7AE05FDC}"
 EndProject
@@ -23,13 +28,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Basket", "Modules\Basket\Ba
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Odering", "Modules\Oredering\Odering\Odering.csproj", "{139D7246-30C5-4030-BC7D-39E945545CEF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Shared\\Shared\\Shared.csproj", "{F97C83D9-FDFC-4523-8E0E-F7E7387C4EC4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Shared\Shared\Shared.csproj", "{F97C83D9-FDFC-4523-8E0E-F7E7387C4EC4}"
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{81DDED9D-158B-E303-5F62-77A2896D2A5A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Catalog.Contracts", "Modules\Catalog\Catalog.Contracts\Catalog.Contracts.csproj", "{525215C5-479A-400A-8D79-6A3ECF9FE75F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared.Contracts", "Shared\\Shared.Contracts\\Shared.Contracts.csproj", "{89AA050A-7958-4D86-89A4-8F04E0919A14}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared.Contracts", "Shared\Shared.Contracts\Shared.Contracts.csproj", "{89AA050A-7958-4D86-89A4-8F04E0919A14}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -89,4 +94,3 @@ Global
 		SolutionGuid = {A21D55D7-67DB-4285-8013-69C1E716048F}
 	EndGlobalSection
 EndGlobal
-

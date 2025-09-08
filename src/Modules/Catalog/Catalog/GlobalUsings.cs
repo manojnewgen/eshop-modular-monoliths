@@ -27,10 +27,11 @@ global using Carter;
 
 // Shared module namespaces (inherited from Shared project reference)
 global using Shared.DDD;
-global using Shared.CQRS;
+global using Shared.Contracts.CQRS;
 global using Shared.Mapping;
+global using Shared.Exceptions;
 
 // Catalog module namespaces
 global using Catalog.Data;
 global using Catalog.Products.Dtos;
-global using Catalog.Products.Events;global using Catalog.Products.Events;
+global using Catalog.Products.Events;

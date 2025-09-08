@@ -6,6 +6,7 @@ global using System.Linq;
 global using System.Threading;
 global using System.Threading.Tasks;
 
+
 global using Basket.Basket.Modules;
 // Microsoft Extensions
 global using Microsoft.Extensions.DependencyInjection;
@@ -27,11 +28,8 @@ global using Carter;
 
 // Shared module namespaces (inherited from Shared project reference)
 global using Shared.DDD;
-global using Shared.Contracts.CQRS;
+global using Shared.CQRS;
 global using Shared.Mapping;
-global using Shared.Exceptions;
 
-// Basket module namespaces
-global using Basket.Data;
-global using Basket.Basket.DTOs;
-global using Basket.Data.Repositories;
+using Basket.Basket.Modules;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;

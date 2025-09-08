@@ -2,6 +2,8 @@ using Carter;
 using MediatR;
 using Mapster;
 using Basket.Basket.DTOs;
+using Shared.Contracts.CQRS;
+
 
 namespace Basket.Basket.Features.CheckoutBasket
 {

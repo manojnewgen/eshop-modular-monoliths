@@ -1,8 +1,3 @@
-using Carter;
-using MediatR;
-using Mapster;
-using Basket.Basket.DTOs;
-
 namespace Basket.Basket.Features.BulkUpdateBasket
 {
     public record BulkUpdateBasketRequest(
