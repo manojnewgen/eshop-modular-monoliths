@@ -1,99 +1,306 @@
 using Catalog;
 using Basket;
-using Odering;
+using Odering; // Note: This appears to be the actual namespace name in the project
 using Shared.Data.Extensions;
-using Shared.Extentions;
+using Shared.Behaviors.Extensions; // CHANGED: Use the correct extension namespace
 using Shared.Exceptions.Extensions;
 using Carter;
 using Shared.Behaviors;
+using Microsoft.OpenApi.Models;
+using System.Text.Json;
+using FluentValidation; // ADDED: For validator registration
 
 var builder = WebApplication.CreateBuilder(args);
 
-var catlogAssembly = typeof(CatalogModule).Assembly;
-var basketsAssembly = typeof(BasketModule).Assembly; // Fixed: was typeof(CatalogModule).Assembly
+// Assembly references - Fixed typos and improved naming
+var catalogAssembly = typeof(CatalogModule).Assembly;  // Fixed typo: was "catlogAssembly"
+var basketAssembly = typeof(BasketModule).Assembly;    // Fixed: was typeof(CatalogModule).Assembly
+var orderingAssembly = typeof(OrderingModule).Assembly; // Added missing ordering assembly
 
-//common sevices: carter, Mediater, FluentValidation
-builder.Services.AddCarterWithAssemblies(catlogAssembly, basketsAssembly);
+var moduleAssemblies = new[] { catalogAssembly, basketAssembly, orderingAssembly };
 
-builder.Services.AddMediatRWithAssemblies(catlogAssembly, basketsAssembly);
+// Common services: Carter, MediatR, FluentValidation
+builder.Services.AddCarterWithAssemblies(moduleAssemblies);
+// CHANGED: Use the correct extension method that properly registers pipeline behaviors
+builder.Services.AddMediatRWithBehaviors(moduleAssemblies);
 
+// ADDED: Explicit FluentValidation registration
+builder.Services.AddValidatorsFromAssemblies(moduleAssemblies);
+
+// Redis Cache with better configuration
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration.GetConnectionString("Redis");
+    options.InstanceName = "eShop";
 });
 
-builder.Services.AddMassTransitWithAssemblies(builder.Configuration,catlogAssembly, basketsAssembly);
+// Message Bus
+builder.Services.AddMassTransitWithAssemblies(builder.Configuration, moduleAssemblies);
 
-// Add services to the container
+// Module services
 builder.Services.AddCatalogModule(builder.Configuration)
                 .AddBasketModule(builder.Configuration)
                 .AddOrderingModule(builder.Configuration);
 
-// Add exception handling
+// Exception handling
 builder.Services.AddCustomExceptionHandler();
 
-// Add controllers for API endpoints
-builder.Services.AddControllers();
+// API Controllers with improved JSON configuration
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.WriteIndented = builder.Environment.IsDevelopment();
+        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+    });
 
-// Add health checks (basic)
-builder.Services.AddHealthChecks();
+// API Documentation for non-production environments
+if (!builder.Environment.IsProduction())
+{
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc("v1", new OpenApiInfo 
+        { 
+            Title = "eShop Modular Monolith API", 
+            Version = "v1",
+            Description = "A modular monolith e-commerce API built with .NET 8",
+            Contact = new OpenApiContact
+            {
+                Name = "eShop Team",
+                Email = "support@eshop.com"
+            }
+        });
+        
+        // Include XML comments if available
+        var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+        if (File.Exists(xmlPath))
+        {
+            c.IncludeXmlComments(xmlPath);
+        }
+    });
+}
 
-// Add CORS
+// Enhanced Health Checks
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy());
+
+// Add database health checks if connection strings are available
+var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection");
+var redisConnection = builder.Configuration.GetConnectionString("Redis");
+
+if (!string.IsNullOrEmpty(defaultConnection))
+{
+    builder.Services.AddHealthChecks()
+        .AddNpgSql(defaultConnection, name: "database", tags: new[] { "database", "ready" });
+}
+
+if (!string.IsNullOrEmpty(redisConnection))
+{
+    builder.Services.AddHealthChecks()
+        .AddRedis(redisConnection, name: "redis", tags: new[] { "cache", "ready" });
+}
+
+// Environment-specific CORS configuration
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    if (builder.Environment.IsDevelopment())
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
+        options.AddPolicy("Development", policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+    }
+    else
+    {
+        // Production CORS - more restrictive
+        options.AddPolicy("Production", policy =>
+        {
+            var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() 
+                               ?? new[] { "https://localhost:7000", "https://localhost:7001" };
+            
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials()
+                  .SetPreflightMaxAge(TimeSpan.FromMinutes(5));
+        });
+    }
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
-app.UseCors("AllowAll");
+// Configure the HTTP request pipeline based on environment
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "eShop API V1");
+        c.RoutePrefix = "swagger";
+        c.DisplayRequestDuration();
+        c.EnableTryItOutByDefault();
+    });
+    app.UseCors("Development");
+}
+else
+{
+    // Production security headers
+    app.UseHsts();
+    app.Use(async (context, next) =>
+    {
+        context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+        context.Response.Headers.Add("X-Frame-Options", "DENY");
+        context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+        context.Response.Headers.Add("Referrer-Policy", "strict-origin-when-cross-origin");
+        await next();
+    });
+    app.UseCors("Production");
+}
 
-// Add exception handling middleware (must be early in the pipeline)
+app.UseHttpsRedirection();
+
+// Exception handling middleware (must be early in the pipeline)
 app.UseExceptionHandler();
 
-// === DATABASE MIGRATION OPTIONS ===
+// Database migrations with better error handling
+try
+{
+    app.Logger.LogInformation("Starting database migrations...");
+    app.UseModuleMigrations();
+    app.Logger.LogInformation("Database migrations completed successfully");
+}
+catch (Exception ex)
+{
+    app.Logger.LogError(ex, "Database migration failed during startup");
+    if (app.Environment.IsProduction())
+    {
+        throw; // Re-throw in production to prevent startup with bad database state
+    }
+    app.Logger.LogWarning("Continuing startup despite migration failure (Development environment)");
+}
 
-// Option 1: Apply migrations for all registered DbContexts automatically
-// This will discover and migrate all registered DbContexts
-app.UseModuleMigrations();
-app.MapCarter();
-
-// Option 2: Configure modules (which will apply individual migrations)
+// Configure modules in dependency order
 app.UseCatalogModule()
    .UseBasketModule()
    .UseOrderingModule();
 
-// Option 3: Apply migrations manually with custom retry settings
-// await app.UseMigrationAsync<CatalogDbContext>(retryCount: 5, retryDelay: 3000);
-// await app.UseMigrationAsync<BasketDbContext>(retryCount: 5, retryDelay: 3000);
+// Carter routing for minimal APIs
+app.MapCarter();
 
-// === MIGRATION STATUS ENDPOINT ===
-// Add an endpoint to check migration status
-app.MapMigrationStatusEndpoint("/migration-status");
-
-// Add health check endpoints
-app.MapHealthChecks("/health");
-
-// Add migration info endpoint
-app.MapGet("/migration-info", async () =>
+// Comprehensive Health Check endpoints
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions()
 {
-    var migrationInfos = await app.GetAllMigrationInfoAsync();
-    return Results.Ok(new
-    {
-        Timestamp = DateTime.UtcNow,
-        Migrations = migrationInfos
-    });
+    Predicate = _ => true,
+    AllowCachingResponses = false
 });
 
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions()
+{
+    Predicate = check => check.Tags.Contains("ready"),
+    AllowCachingResponses = false
+});
+
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions()
+{
+    Predicate = _ => false, // No checks for liveness - just that the app is running
+    AllowCachingResponses = false
+});
+
+// Migration status endpoint
+app.MapMigrationStatusEndpoint("/migration-status");
+
+// Enhanced migration info endpoint with better error handling
+app.MapGet("/migration-info", async (ILogger<Program> logger) =>
+{
+    try
+    {
+        var migrationInfos = await app.GetAllMigrationInfoAsync();
+        return Results.Ok(new
+        {
+            Timestamp = DateTime.UtcNow,
+            Environment = app.Environment.EnvironmentName,
+            Version = "1.0.0",
+            Status = "Running",
+            Migrations = migrationInfos
+        });
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Failed to retrieve migration information");
+        return Results.Problem(
+            title: "Migration Info Error",
+            detail: "Failed to retrieve migration information. Check logs for details.",
+            statusCode: 500);
+    }
+})
+.WithName("GetMigrationInfo")
+.WithTags("System");
+
+// API Controllers
 app.MapControllers();
 
-// Add a simple test endpoint
-app.MapGet("/", () => "eShop Modular Monolith API is running!");
+// Enhanced root endpoint with comprehensive API information
+app.MapGet("/", (IWebHostEnvironment env, LinkGenerator linkGenerator, HttpContext context) => 
+{
+    var baseUrl = $"{context.Request.Scheme}://{context.Request.Host}";
+    
+    return Results.Ok(new
+    {
+        Message = "?? eShop Modular Monolith API is running!",
+        Version = "1.0.0",
+        Environment = env.EnvironmentName,
+        Timestamp = DateTime.UtcNow,
+        Server = Environment.MachineName,
+        Framework = Environment.Version.ToString(),
+        Endpoints = new
+        {
+            Health = $"{baseUrl}/health",
+            HealthReady = $"{baseUrl}/health/ready",
+            HealthLive = $"{baseUrl}/health/live",
+            MigrationStatus = $"{baseUrl}/migration-status",
+            MigrationInfo = $"{baseUrl}/migration-info",
+            Swagger = env.IsDevelopment() ? $"{baseUrl}/swagger" : null,
+            Controllers = $"{baseUrl}/api"
+        },
+        Modules = new
+        {
+            Catalog = "Product catalog management",
+            Basket = "Shopping cart functionality", 
+            Ordering = "Order processing and management"
+        }
+    });
+})
+.WithName("GetApiInfo")
+.WithTags("System");
 
-app.Run();
+// Graceful shutdown handling
+var appLifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+
+appLifetime.ApplicationStopping.Register(() =>
+{
+    app.Logger.LogInformation("?? Application is shutting down...");
+});
+
+appLifetime.ApplicationStopped.Register(() =>
+{
+    app.Logger.LogInformation("? Application has stopped gracefully");
+});
+
+try
+{
+    app.Logger.LogInformation("?? Starting eShop Modular Monolith API");
+    app.Logger.LogInformation("?? Environment: {Environment}", app.Environment.EnvironmentName);
+    app.Logger.LogInformation("?? Content Root: {ContentRoot}", app.Environment.ContentRootPath);
+    
+    app.Run();
+}
+catch (Exception ex)
+{
+    app.Logger.LogCritical(ex, "?? Application terminated unexpectedly");
+    throw;
+}

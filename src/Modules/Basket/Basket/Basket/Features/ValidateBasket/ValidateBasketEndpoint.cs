@@ -2,6 +2,7 @@ using Carter;
 using MediatR;
 using Mapster;
 using Basket.Basket.DTOs;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Basket.Basket.Features.ValidateBasket
 {
@@ -16,7 +17,7 @@ namespace Basket.Basket.Features.ValidateBasket
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapPost("/baskets/{basketId:guid}/validate", async (Guid basketId, ISender sender) =>
+            app.MapPost("/baskets/{basketId:guid}/validate", async (Guid basketId, [FromServices] ISender sender) =>
             {
                 var command = new ValidateBasketRequest(basketId);
                 var result = await sender.Send(command);

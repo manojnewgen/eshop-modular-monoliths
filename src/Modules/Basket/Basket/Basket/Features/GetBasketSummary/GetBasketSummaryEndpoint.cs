@@ -2,6 +2,7 @@ using Carter;
 using MediatR;
 using Mapster;
 using Basket.Basket.DTOs;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Basket.Basket.Features.GetBasketSummary
 {
@@ -19,9 +20,10 @@ namespace Basket.Basket.Features.GetBasketSummary
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapGet("/baskets/{basketId:guid}/summary", async (Guid basketId, ISender sender) =>
+            app.MapGet("/baskets/{basketId:guid}/summary", async (Guid basketId, [FromServices] ISender sender) =>
             {
-                var query = new GetBasketSummaryRequest(basketId);
+                var request = new GetBasketSummaryRequest(basketId);
+                var query = request.Adapt<GetBasketSummaryQuery>();
                 var result = await sender.Send(query);
                 var response = result.Adapt<GetBasketSummaryResponse>();
                 return Results.Ok(response);

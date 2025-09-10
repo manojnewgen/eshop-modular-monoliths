@@ -2,6 +2,7 @@ using Carter;
 using MediatR;
 using Mapster;
 using Basket.Basket.DTOs;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Basket.Basket.Features.RemoveItemFromBasket
 {
@@ -16,9 +17,10 @@ namespace Basket.Basket.Features.RemoveItemFromBasket
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapDelete("/baskets/{basketId:guid}/items", async (Guid basketId, RemoveItemFromBasketRequest request, ISender sender) =>
+            app.MapDelete("/baskets/{basketId:guid}/items", async (Guid basketId, [FromBody] RemoveItemFromBasketRequest request, [FromServices] ISender sender) =>
             {
                 var command = request.Adapt<RemoveItemFromBasketCommand>();
+                command = command with { BasketId = basketId }; // Ensure basketId from route is used
                 var result = await sender.Send(command);
                 var response = result.Adapt<RemoveItemFromBasketResponse>();
                 return Results.Ok(response);

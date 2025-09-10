@@ -2,6 +2,7 @@ using Carter;
 using MediatR;
 using Mapster;
 using Basket.Basket.DTOs;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Basket.Basket.Features.AddItemToBasket
 {
@@ -19,9 +20,10 @@ namespace Basket.Basket.Features.AddItemToBasket
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapPost("/baskets/{basketId:guid}/items", async (Guid basketId, AddItemToBasketRequest request, ISender sender) =>
+            app.MapPost("/baskets/{basketId:guid}/items", async (Guid basketId, [FromBody] AddItemToBasketRequest request, [FromServices] ISender sender) =>
             {
                 var command = request.Adapt<AddItemToBasketCommand>();
+                command = command with { BasketId = basketId }; // Ensure basketId from route is used
                 var result = await sender.Send(command);
                 var response = result.Adapt<AddItemToBasketResponse>();
                 return Results.Ok(response);

@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using MediatR;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace Shared.Behaviors
 {
@@ -8,11 +11,20 @@ namespace Shared.Behaviors
     /// </summary>
     /// <typeparam name="TRequest">The request type</typeparam>
     /// <typeparam name="TResponse">The response type</typeparam>
-    public class RequestContextBehavior<TRequest, TResponse>(
-        ILogger<RequestContextBehavior<TRequest, TResponse>> logger,
-        IHttpContextAccessor httpContextAccessor) : IPipelineBehavior<TRequest, TResponse>
+    public class RequestContextBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
         where TRequest : notnull
     {
+        private readonly ILogger<RequestContextBehavior<TRequest, TResponse>> _logger;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public RequestContextBehavior(
+            ILogger<RequestContextBehavior<TRequest, TResponse>> logger,
+            IHttpContextAccessor httpContextAccessor)
+        {
+            _logger = logger;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             var requestName = typeof(TRequest).Name;
@@ -22,7 +34,7 @@ namespace Shared.Behaviors
             var ipAddress = GetClientIpAddress();
 
             // Set up logging scope with context information
-            using var scope = logger.BeginScope(new Dictionary<string, object>
+            using var scope = _logger.BeginScope(new Dictionary<string, object>
             {
                 ["CorrelationId"] = correlationId,
                 ["RequestName"] = requestName,
@@ -43,7 +55,7 @@ namespace Shared.Behaviors
             }
 
             // Log request context
-            logger.LogDebug("?? Request context established for {RequestName} - CorrelationId: {CorrelationId}, User: {UserId}",
+            _logger.LogDebug("?? Request context established for {RequestName} - CorrelationId: {CorrelationId}, User: {UserId}",
                 requestName, correlationId, userId ?? "Anonymous");
 
             try
@@ -52,7 +64,7 @@ namespace Shared.Behaviors
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "?? Request failed in context - CorrelationId: {CorrelationId}, User: {UserId}",
+                _logger.LogError(ex, "?? Request failed in context - CorrelationId: {CorrelationId}, User: {UserId}",
                     correlationId, userId ?? "Anonymous");
                 throw;
             }
@@ -60,7 +72,7 @@ namespace Shared.Behaviors
 
         private string GetOrCreateCorrelationId()
         {
-            var httpContext = httpContextAccessor.HttpContext;
+            var httpContext = _httpContextAccessor.HttpContext;
             
             if (httpContext == null)
                 return Guid.NewGuid().ToString("N")[..12]; // Short ID for non-HTTP contexts
@@ -87,7 +99,7 @@ namespace Shared.Behaviors
 
         private string? GetCurrentUserId()
         {
-            var httpContext = httpContextAccessor.HttpContext;
+            var httpContext = _httpContextAccessor.HttpContext;
             
             if (httpContext?.User?.Identity?.IsAuthenticated == true)
             {
@@ -103,7 +115,7 @@ namespace Shared.Behaviors
 
         private string? GetUserAgent()
         {
-            var httpContext = httpContextAccessor.HttpContext;
+            var httpContext = _httpContextAccessor.HttpContext;
             
             if (httpContext?.Request?.Headers != null &&
                 httpContext.Request.Headers.TryGetValue("User-Agent", out var userAgent))
@@ -116,7 +128,7 @@ namespace Shared.Behaviors
 
         private string? GetClientIpAddress()
         {
-            var httpContext = httpContextAccessor.HttpContext;
+            var httpContext = _httpContextAccessor.HttpContext;
             
             if (httpContext == null)
                 return null;

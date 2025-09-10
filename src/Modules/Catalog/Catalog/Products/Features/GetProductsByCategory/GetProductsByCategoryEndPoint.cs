@@ -5,6 +5,7 @@ using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Catalog.Products.Features.GetProductsByCategory
 {
@@ -29,7 +30,7 @@ namespace Catalog.Products.Features.GetProductsByCategory
                 string category,
                 int pageNumber,
                 int pageSize,
-                ISender sender) =>
+                [FromServices] ISender sender) =>
             {
                 var query = new GetProductsByCategoryQuery(
                     category,

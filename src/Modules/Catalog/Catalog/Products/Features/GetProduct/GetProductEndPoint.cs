@@ -1,4 +1,13 @@
-﻿namespace Catalog.Products.Features.GetProduct
+﻿using Carter;
+using Catalog.Products.Dtos;
+using Mapster;
+using MediatR;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Catalog.Products.Features.GetProduct
 {
     record GetProductRequest(Guid ProductId);
 
@@ -9,7 +18,7 @@
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapGet("/product/{productId:guid}", async (Guid productId, ISender sender) =>
+            app.MapGet("/product/{productId:guid}", async (Guid productId, [FromServices] ISender sender) =>
             {
                 var query = new GetProductQuery(productId);
                 var result = await sender.Send(query);

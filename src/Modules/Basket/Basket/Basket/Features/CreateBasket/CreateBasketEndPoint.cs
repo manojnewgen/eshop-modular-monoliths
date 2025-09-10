@@ -3,6 +3,7 @@ using Carter;
 using MediatR;
 using Mapster;
 using Basket.Basket.DTOs;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Basket.Basket.Features.CreateBasket
 {
@@ -13,7 +14,7 @@ namespace Basket.Basket.Features.CreateBasket
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapPost("/baskets", async (CreateBasketRequest request, ISender sender) =>
+            app.MapPost("/baskets", async ([FromBody] CreateBasketRequest request, [FromServices] ISender sender) =>
             {
                 var command = request.Adapt<CreateBasketCommand>();
                 var result = await sender.Send(command);

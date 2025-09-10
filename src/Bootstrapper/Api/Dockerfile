@@ -13,9 +13,10 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Bootstrapper/Api/Api.csproj", "Bootstrapper/Api/"]
 COPY ["Modules/Basket/Basket/Basket.csproj", "Modules/Basket/Basket/"]
-COPY ["Modules/Shared/Shared/Shared.csproj", "Modules/Shared/Shared/"]
 COPY ["Modules/Catalog/Catalog/Catalog.csproj", "Modules/Catalog/Catalog/"]
 COPY ["Modules/Oredering/Odering/Odering.csproj", "Modules/Oredering/Odering/"]
+COPY ["Shared/Shared/Shared.csproj", "Shared/Shared/"]
+COPY ["Shared/Shared.Messaging/Shared.Messaging.csproj", "Shared/Shared.Messaging/"]
 RUN dotnet restore "./Bootstrapper/Api/Api.csproj"
 COPY . .
 WORKDIR "/src/Bootstrapper/Api"

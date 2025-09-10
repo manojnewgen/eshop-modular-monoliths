@@ -92,7 +92,7 @@ namespace Catalog.Products
             var oldPrice = Price;
             Price = newPrice;
 
-            AddDomainEvent(new ProductPriceChangedEvent(Id, oldPrice, newPrice, reason));
+            AddDomainEvent(new ProductPriceChangedEvent(Id, oldPrice, newPrice, this, reason));
         }
 
         public void UpdateStock(int quantity)

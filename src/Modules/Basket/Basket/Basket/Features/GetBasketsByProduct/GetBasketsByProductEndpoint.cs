@@ -2,6 +2,7 @@ using Carter;
 using MediatR;
 using Mapster;
 using Basket.Basket.DTOs;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Basket.Basket.Features.GetBasketsByProduct
 {
@@ -12,9 +13,10 @@ namespace Basket.Basket.Features.GetBasketsByProduct
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapGet("/baskets/product/{productId:guid}", async (Guid productId, ISender sender) =>
+            app.MapGet("/baskets/product/{productId:guid}", async (Guid productId, [FromServices] ISender sender) =>
             {
-                var query = new GetBasketsByProductRequest(productId);
+                var request = new GetBasketsByProductRequest(productId);
+                var query = request.Adapt<GetBasketsByProductQuery>();
                 var result = await sender.Send(query);
                 var response = result.Adapt<GetBasketsByProductResponse>();
                 return Results.Ok(response);

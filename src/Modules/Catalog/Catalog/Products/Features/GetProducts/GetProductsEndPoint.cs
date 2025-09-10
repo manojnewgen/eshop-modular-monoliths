@@ -1,3 +1,12 @@
+using Carter;
+using Catalog.Products.Dtos;
+using Mapster;
+using MediatR;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Mvc;
+
 namespace Catalog.Products.Features.GetProducts
 {
     public record GetProductsRequest(
@@ -28,7 +37,7 @@ namespace Catalog.Products.Features.GetProducts
                 bool includeDeleted,
                 int pageNumber,
                 int pageSize,
-                ISender sender) =>
+                [FromServices] ISender sender) =>
             {
                 var query = new GetProductsQuery(
                     searchTerm,

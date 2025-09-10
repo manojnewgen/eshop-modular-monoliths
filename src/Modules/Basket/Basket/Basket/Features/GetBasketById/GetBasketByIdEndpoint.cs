@@ -2,6 +2,7 @@ using Carter;
 using MediatR;
 using Mapster;
 using Basket.Basket.DTOs;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Basket.Basket.Features.GetBasketById
 {
@@ -12,9 +13,10 @@ namespace Basket.Basket.Features.GetBasketById
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapGet("/baskets/{basketId:guid}", async (Guid basketId, ISender sender) =>
+            app.MapGet("/baskets/{basketId:guid}", async (Guid basketId, [FromServices] ISender sender) =>
             {
-                var query = new GetBasketByIdRequest(basketId).Adapt<GetBasketByIdQuery>();
+                var request = new GetBasketByIdRequest(basketId);
+                var query = request.Adapt<GetBasketByIdQuery>();
                 var result = await sender.Send(query);
                 var response = result.Adapt<GetBasketByIdResponse>();
                 return Results.Ok(response);

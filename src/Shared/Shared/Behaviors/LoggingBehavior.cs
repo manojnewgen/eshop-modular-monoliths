@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
+using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Shared.Behaviors
 {
@@ -9,9 +11,16 @@ namespace Shared.Behaviors
     /// </summary>
     /// <typeparam name="TRequest">The request type</typeparam>
     /// <typeparam name="TResponse">The response type</typeparam>
-    public class LoggingBehavior<TRequest, TResponse>(ILogger<LoggingBehavior<TRequest, TResponse>> logger) : IPipelineBehavior<TRequest, TResponse>
+    public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
         where TRequest : notnull
     {
+        private readonly ILogger<LoggingBehavior<TRequest, TResponse>> _logger;
+
+        public LoggingBehavior(ILogger<LoggingBehavior<TRequest, TResponse>> logger)
+        {
+            _logger = logger;
+        }
+
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             var requestName = typeof(TRequest).Name;
@@ -19,7 +28,7 @@ namespace Shared.Behaviors
             var stopwatch = Stopwatch.StartNew();
 
             // Log request start with structured data
-            logger.LogInformation("?? Starting request {RequestName} [{RequestId}] at {Timestamp}",
+            _logger.LogInformation("?? Starting request {RequestName} [{RequestId}] at {Timestamp}",
                 requestName, requestId, DateTime.UtcNow);
 
             // Log detailed request information (only in Development/Staging)
@@ -36,7 +45,7 @@ namespace Shared.Behaviors
                 stopwatch.Stop();
 
                 // Log successful completion
-                logger.LogInformation("? Completed request {RequestName} [{RequestId}] in {ElapsedMs}ms",
+                _logger.LogInformation("? Completed request {RequestName} [{RequestId}] in {ElapsedMs}ms",
                     requestName, requestId, stopwatch.ElapsedMilliseconds);
 
                 // Log response details (only in Development/Staging)
@@ -50,7 +59,7 @@ namespace Shared.Behaviors
                 exception = ex;
 
                 // Log failure with exception details
-                logger.LogError(ex, "? Failed request {RequestName} [{RequestId}] in {ElapsedMs}ms - {ErrorMessage}",
+                _logger.LogError(ex, "? Failed request {RequestName} [{RequestId}] in {ElapsedMs}ms - {ErrorMessage}",
                     requestName, requestId, stopwatch.ElapsedMilliseconds, ex.Message);
 
                 throw;
@@ -64,7 +73,7 @@ namespace Shared.Behaviors
 
         private void LogRequestDetails(TRequest request, Guid requestId)
         {
-            if (!logger.IsEnabled(LogLevel.Debug))
+            if (!_logger.IsEnabled(LogLevel.Debug))
                 return;
 
             try
@@ -75,19 +84,19 @@ namespace Shared.Behaviors
                     WriteIndented = false
                 });
 
-                logger.LogDebug("?? Request details [{RequestId}]: {RequestData}",
+                _logger.LogDebug("?? Request details [{RequestId}]: {RequestData}",
                     requestId, requestJson);
             }
             catch (Exception ex)
             {
-                logger.LogWarning("?? Could not serialize request [{RequestId}]: {Error}",
+                _logger.LogWarning("?? Could not serialize request [{RequestId}]: {Error}",
                     requestId, ex.Message);
             }
         }
 
         private void LogResponseDetails(TResponse response, Guid requestId)
         {
-            if (!logger.IsEnabled(LogLevel.Debug))
+            if (!_logger.IsEnabled(LogLevel.Debug))
                 return;
 
             try
@@ -103,18 +112,18 @@ namespace Shared.Behaviors
                         WriteIndented = false
                     });
 
-                    logger.LogDebug("?? Response details [{RequestId}]: {ResponseData}",
+                    _logger.LogDebug("?? Response details [{RequestId}]: {ResponseData}",
                         requestId, responseJson);
                 }
                 else
                 {
-                    logger.LogDebug("?? Response [{RequestId}]: {ResponseType}",
+                    _logger.LogDebug("?? Response [{RequestId}]: {ResponseType}",
                         requestId, responseType.Name);
                 }
             }
             catch (Exception ex)
             {
-                logger.LogWarning("?? Could not serialize response [{RequestId}]: {Error}",
+                _logger.LogWarning("?? Could not serialize response [{RequestId}]: {Error}",
                     requestId, ex.Message);
             }
         }
@@ -124,12 +133,12 @@ namespace Shared.Behaviors
             // Log performance warnings for slow requests
             if (elapsedMs > 5000) // > 5 seconds
             {
-                logger.LogWarning("?? Slow request detected: {RequestName} [{RequestId}] took {ElapsedMs}ms",
+                _logger.LogWarning("?? Slow request detected: {RequestName} [{RequestId}] took {ElapsedMs}ms",
                     requestName, requestId, elapsedMs);
             }
             else if (elapsedMs > 1000) // > 1 second
             {
-                logger.LogInformation("?? Request {RequestName} [{RequestId}] took {ElapsedMs}ms",
+                _logger.LogInformation("? Request {RequestName} [{RequestId}] took {ElapsedMs}ms",
                     requestName, requestId, elapsedMs);
             }
 

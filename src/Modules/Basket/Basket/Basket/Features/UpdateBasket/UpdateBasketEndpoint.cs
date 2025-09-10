@@ -2,6 +2,7 @@ using Carter;
 using MediatR;
 using Mapster;
 using Basket.Basket.DTOs;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Basket.Basket.Features.UpdateBasket
 {
@@ -12,9 +13,10 @@ namespace Basket.Basket.Features.UpdateBasket
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapPut("/baskets/{basketId:guid}", async (Guid basketId, UpdateBasketRequest request, ISender sender) =>
+            app.MapPut("/baskets/{basketId:guid}", async (Guid basketId, [FromBody] UpdateBasketRequest request, [FromServices] ISender sender) =>
             {
                 var command = request.Adapt<UpdateBasketCommand>();
+                command = command with { BasketId = basketId }; // Ensure basketId from route is used
                 var result = await sender.Send(command);
                 var response = result.Adapt<UpdateBasketResponse>();
                 return Results.Ok(response);

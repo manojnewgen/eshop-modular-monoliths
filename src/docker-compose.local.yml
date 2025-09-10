@@ -1,0 +1,81 @@
+# Docker Compose override for using LOCAL PostgreSQL
+# Run with: docker-compose -f docker-compose.yml -f docker-compose.local.yml up
+
+services:
+  # Remove PostgreSQL container - we'll use local PostgreSQL
+  eshop-db:
+    image: alpine:latest
+    container_name: eshop-database-placeholder
+    command: ["echo", "Using local PostgreSQL instead of containerized version"]
+    networks:
+      - eshop-network
+
+  # Keycloak Identity Server (using local PostgreSQL with identity schema)
+  identity:
+    environment:
+      # Connect to local PostgreSQL via host.docker.internal with identity schema
+      KC_DB_URL_HOST: host.docker.internal
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: eshopdb
+      KC_DB_SCHEMA: identity
+      KC_DB_USERNAME: eshopuser
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      # Development settings
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin123}
+      KC_HOSTNAME: localhost
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_PROXY: edge
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      KC_LOG_LEVEL: INFO
+    ports:
+      - "9090:8080"
+    volumes:
+      - ./keycloak/dev-data:/opt/keycloak/data/import
+      - ./keycloak/themes:/opt/keycloak/themes
+    command: ["start-dev", "--import-realm"]
+    depends_on:
+      - eshop-db  # Placeholder dependency
+    
+  # Main Application API (connecting to local PostgreSQL with schemas)
+  eshop-api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      # Connect to local PostgreSQL with different schemas per module
+      ConnectionStrings__DefaultConnection: "Host=host.docker.internal;Port=5432;Database=eshopdb;Username=eshopuser;Password=${POSTGRES_PASSWORD};SearchPath=shared,public;Include Error Detail=true"
+      ConnectionStrings__CatalogConnection: "Host=host.docker.internal;Port=5432;Database=eshopdb;Username=eshopuser;Password=${POSTGRES_PASSWORD};SearchPath=catalog,shared,public;Include Error Detail=true"
+      ConnectionStrings__BasketConnection: "Host=host.docker.internal;Port=5432;Database=eshopdb;Username=eshopuser;Password=${POSTGRES_PASSWORD};SearchPath=basket,shared,public;Include Error Detail=true"
+      ConnectionStrings__OrderingConnection: "Host=host.docker.internal;Port=5432;Database=eshopdb;Username=eshopuser;Password=${POSTGRES_PASSWORD};SearchPath=ordering,shared,public;Include Error Detail=true"
+      # Messaging/Event connection
+      ConnectionStrings__MessagingConnection: "Host=host.docker.internal;Port=5432;Database=eshopdb;Username=eshopuser;Password=${POSTGRES_PASSWORD};SearchPath=messaging,shared,public;Include Error Detail=true"
+      # Development authentication settings
+      Authentication__Keycloak__Authority: "http://localhost:9090/realms/eshop-dev"
+      Authentication__Keycloak__Audience: "eshop-api-dev"
+      Authentication__Keycloak__RequireHttpsMetadata: "false"
+      Authentication__Keycloak__ValidateAudience: "false"
+      # Development logging level
+      Logging__LogLevel__Default: Debug
+      Logging__LogLevel__Microsoft: Information
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eshop-redis
+      - messagebus
+      - identity
+    volumes:
+      - ./logs:/app/logs
+      
+  # Remove pgAdmin since you'll use your local PostgreSQL tools
+  eshop-pgadmin:
+    image: alpine:latest
+    container_name: eshop-pgadmin-placeholder
+    command: ["echo", "Using local pgAdmin or PostgreSQL tools instead"]
+
+networks:
+  eshop-network:
+    driver: bridge
+    name: eshop-network

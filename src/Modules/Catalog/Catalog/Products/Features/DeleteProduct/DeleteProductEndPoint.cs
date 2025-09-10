@@ -5,28 +5,23 @@ using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Catalog.Products.Features.DeleteProduct
 {
     record DeleteProductRequest(Guid ProductId);
-
     record DeleteProductResponse(Guid ProductId, bool Success, string? Message = null);
+
     public class DeleteProductEndPoint : ICarterModule
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapDelete("delete", async (DeleteProductRequest request, ISender sender) =>
+            app.MapDelete("delete", async ([FromBody] DeleteProductRequest request, [FromServices] ISender sender) =>
             {
                 var command = request.Adapt<DeleteProductCommand>();
-                var result = sender.Send(command);
+                var result = await sender.Send(command);
                 var response = result.Adapt<DeleteProductResponse>();
-                return response;
-
+                return Results.Ok(response);
             })
             .WithName("Delete")
             .Produces<DeleteProductResponse>(StatusCodes.Status200OK)

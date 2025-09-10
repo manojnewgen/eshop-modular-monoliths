@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   eshop-db:
@@ -12,10 +10,12 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-eshopuser}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-5433}:5432"  # Changed from 5432 to 5433 to avoid conflicts
     volumes:
       - postgres_eshopdb:/var/lib/postgresql/data
-      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+      # Comment out problematic file mounts temporarily to resolve startup issues
+      # - ./init-scripts:/docker-entrypoint-initdb.d:ro
+      # - ./database-schema-setup.sql:/docker-entrypoint-initdb.d/01-schema-setup.sql:ro
     networks:
       - eshop-network
     healthcheck:
@@ -25,6 +25,45 @@ services:
       retries: 5
       start_period: 60s
     command: postgres -c 'max_connections=100' -c 'shared_buffers=128MB'
+
+  # Keycloak Identity Server (using separate identity database)
+  identity:
+    image: quay.io/keycloak/keycloak:24.0.3
+    platform: linux/amd64
+    container_name: eshop-identity
+    restart: unless-stopped
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_DB: postgres
+      KC_DB_URL_HOST: eshop-db
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: identitydb
+      KC_DB_SCHEMA: public
+      KC_DB_USERNAME: ${POSTGRES_USER:-eshopuser}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY: edge
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    ports:
+      - "${KEYCLOAK_HTTP_PORT:-8082}:8080"
+      - "${KEYCLOAK_HTTPS_PORT:-8443}:8443"
+    depends_on:
+      eshop-db:
+        condition: service_healthy
+    networks:
+      - eshop-network
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    command: ["start", "--optimized"]
 
   # Redis Cache
   eshop-redis:
@@ -44,7 +83,7 @@ services:
       timeout: 10s
       retries: 3
 
-  # Main Application API
+  # Main Application API (with schema-aware connections)
   eshop-api:
     build:
       context: .
@@ -58,15 +97,23 @@ services:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ASPNETCORE_URLS: http://+:8080;https://+:8081
       ASPNETCORE_HTTPS_PORT: 8081
-      # Database Configuration using environment variables
-      ConnectionStrings__DefaultConnection: "Host=eshop-db;Port=5432;Database=${POSTGRES_DB:-eshopdb};Username=${POSTGRES_USER:-eshopuser};Password=${POSTGRES_PASSWORD};Include Error Detail=true"
-      ConnectionStrings__CatalogConnection: "Host=eshop-db;Port=5432;Database=${POSTGRES_DB:-eshopdb};Username=${POSTGRES_USER:-eshopuser};Password=${POSTGRES_PASSWORD};Include Error Detail=true"
-      ConnectionStrings__BasketConnection: "Host=eshop-db;Port=5432;Database=${POSTGRES_DB:-eshopdb};Username=${POSTGRES_USER:-eshopuser};Password=${POSTGRES_PASSWORD};Include Error Detail=true"
-      ConnectionStrings__OrderingConnection: "Host=eshop-db;Port=5432;Database=${POSTGRES_DB:-eshopdb};Username=${POSTGRES_USER:-eshopuser};Password=${POSTGRES_PASSWORD};Include Error Detail=true"
+      # Database Configuration with schema-specific search paths
+      ConnectionStrings__DefaultConnection: "Host=eshop-db;Port=5432;Database=${POSTGRES_DB:-eshopdb};Username=${POSTGRES_USER:-eshopuser};Password=${POSTGRES_PASSWORD};SearchPath=shared,public;Include Error Detail=true"
+      ConnectionStrings__CatalogConnection: "Host=eshop-db;Port=5432;Database=${POSTGRES_DB:-eshopdb};Username=${POSTGRES_USER:-eshopuser};Password=${POSTGRES_PASSWORD};SearchPath=catalog,shared,public;Include Error Detail=true"
+      ConnectionStrings__BasketConnection: "Host=eshop-db;Port=5432;Database=${POSTGRES_DB:-eshopdb};Username=${POSTGRES_USER:-eshopuser};Password=${POSTGRES_PASSWORD};SearchPath=basket,shared,public;Include Error Detail=true"
+      ConnectionStrings__OrderingConnection: "Host=eshop-db;Port=5432;Database=${POSTGRES_DB:-eshopdb};Username=${POSTGRES_USER:-eshopuser};Password=${POSTGRES_PASSWORD};SearchPath=ordering,shared,public;Include Error Detail=true"
+      # Messaging/Event connection
+      ConnectionStrings__MessagingConnection: "Host=eshop-db;Port=5432;Database=${POSTGRES_DB:-eshopdb};Username=${POSTGRES_USER:-eshopuser};Password=${POSTGRES_PASSWORD};SearchPath=messaging,shared,public;Include Error Detail=true"
+      # Separate Identity database connection
+      ConnectionStrings__IdentityConnection: "Host=eshop-db;Port=5432;Database=identitydb;Username=${POSTGRES_USER:-eshopuser};Password=${POSTGRES_PASSWORD};Include Error Detail=true"
       # Redis Configuration
       ConnectionStrings__Redis: "eshop-redis:6379"
       # RabbitMQ Configuration
       ConnectionStrings__MessageBus: "amqp://guest:guest@messagebus:5672/"
+      # Identity/Authentication Configuration
+      Authentication__Keycloak__Authority: "http://identity:8080/realms/eshop"
+      Authentication__Keycloak__Audience: "eshop-api"
+      Authentication__Keycloak__RequireHttpsMetadata: "false"
       # Logging
       Logging__LogLevel__Default: ${LOG_LEVEL:-Information}
       Logging__LogLevel__Microsoft: Warning
@@ -80,6 +127,8 @@ services:
       eshop-redis:
         condition: service_healthy
       messagebus:
+        condition: service_healthy
+      identity:
         condition: service_healthy
     networks:
       - eshop-network
@@ -172,3 +221,6 @@ volumes:
   rabbitmq_data:
     driver: local
     name: eshop_rabbitmq_data
+  keycloak_data:
+    driver: local
+    name: eshop_keycloak_data

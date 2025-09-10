@@ -2,6 +2,7 @@ using Carter;
 using MediatR;
 using Mapster;
 using Basket.Basket.DTOs;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Basket.Basket.Features.ClearBasket
 {
@@ -12,9 +13,10 @@ namespace Basket.Basket.Features.ClearBasket
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapDelete("/baskets/{basketId:guid}/clear", async (Guid basketId, ISender sender) =>
+            app.MapDelete("/baskets/{basketId:guid}/clear", async (Guid basketId, [FromServices] ISender sender) =>
             {
-                var command = new ClearBasketRequest(basketId).Adapt<ClearBasketCommand>();
+                var request = new ClearBasketRequest(basketId);
+                var command = request.Adapt<ClearBasketCommand>();
                 var result = await sender.Send(command);
                 var response = result.Adapt<ClearBasketResponse>();
                 return Results.Ok(response);

@@ -32,10 +32,22 @@ namespace Shared.Messaging.Extensions
 
                 config.UsingRabbitMq((context, configurator) =>
                 {
-                    configurator.Host(configuration["EventBusSettings:HostAddress"], h =>
+                    // Get RabbitMQ configuration from MessageBroker section (matches appsettings.json)
+                    var hostAddress = configuration["MessageBroker:Host"];
+                    var userName = configuration["MessageBroker:UserName"] ?? "guest";
+                    var password = configuration["MessageBroker:Password"] ?? "guest";
+
+                    // Check if host address is configured
+                    if (string.IsNullOrEmpty(hostAddress))
                     {
-                        h.Username(configuration["EventBusSettings:UserName"]);
-                        h.Password(configuration["EventBusSettings:Password"]);
+                        // Fallback to default RabbitMQ connection for development
+                        hostAddress = "amqp://localhost:5672";
+                    }
+
+                    configurator.Host(hostAddress, h =>
+                    {
+                        h.Username(userName);
+                        h.Password(password);
                     });
                     configurator.ConfigureEndpoints(context);
                 });

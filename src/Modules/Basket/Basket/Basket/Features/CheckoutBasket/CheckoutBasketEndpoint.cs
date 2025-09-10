@@ -2,8 +2,7 @@ using Carter;
 using MediatR;
 using Mapster;
 using Basket.Basket.DTOs;
-using Shared.Contracts.CQRS;
-
+using Microsoft.AspNetCore.Mvc;
 
 namespace Basket.Basket.Features.CheckoutBasket
 {
@@ -18,9 +17,10 @@ namespace Basket.Basket.Features.CheckoutBasket
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapPost("/baskets/{basketId:guid}/checkout", async (Guid basketId, ISender sender) =>
+            app.MapPost("/baskets/{basketId:guid}/checkout", async (Guid basketId, [FromServices] ISender sender) =>
             {
-                var command = new CheckoutBasketRequest(basketId);
+                var request = new CheckoutBasketRequest(basketId);
+                var command = request.Adapt<CheckoutBasketCommand>();
                 var result = await sender.Send(command);
                 var response = result.Adapt<CheckoutBasketResponse>();
                 return Results.Ok(response);

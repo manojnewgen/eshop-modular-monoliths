@@ -22,15 +22,15 @@ namespace Catalog.Products.Mappings
                 .Map(dest => dest.Categories, src => src.Categories.ToList())
                 .Map(dest => dest.StockQuantity, src => src.StockQuantity);
 
-            // ProductDto to Product mapping (for creation scenarios)
+            // ProductDto to Product mapping (for creation scenarios only)
             config.NewConfig<ProductDto, Product>()
                 .ConstructUsing(src => Product.Create(
                     src.Id == Guid.Empty ? Guid.NewGuid() : src.Id,
-                    src.Name,
-                    src.Description,
+                    src.Name ?? string.Empty,
+                    src.Description ?? string.Empty,
                     src.Price,
-                    src.ImageFile,
-                    src.Categories,
+                    src.ImageFile ?? string.Empty,
+                    src.Categories ?? new List<string>(),
                     src.StockQuantity
                 ))
                 .PreserveReference(true);
@@ -39,47 +39,6 @@ namespace Catalog.Products.Mappings
             config.NewConfig<Product, ProductDto>()
                 .Map(dest => dest.Categories, src => src.Categories.ToList())
                 .PreserveReference(true);
-
-            // Additional mapping for Product updates - maps only changed fields
-            config.NewConfig<ProductDto, Product>()
-                .Ignore(dest => dest.Id) // Never map ID for updates
-                .Ignore(dest => dest.CreatedAt)
-                .Ignore(dest => dest.CreatedBy)
-                .Ignore(dest => dest.LastModifiedAt)
-                .Ignore(dest => dest.LastModifiedBy)
-                .Ignore(dest => dest.IsDeleted)
-                .Ignore(dest => dest.DeletedAt)
-                .Ignore(dest => dest.DeletedBy)
-                .Ignore(dest => dest.Events) // Domain events
-                .AfterMapping((src, dest) =>
-                {
-                    // Use domain methods for updates to ensure business logic and events
-                    if (dest.Name != src.Name)
-                        dest.UpdateName(src.Name);
-                    
-                    if (dest.Description != src.Description)
-                        dest.UpdateDescription(src.Description);
-                    
-                    if (dest.Price != src.Price)
-                        dest.UpdatePrice(src.Price, "Updated via API");
-                    
-                    if (dest.ImageFile != src.ImageFile)
-                        dest.UpdateImageFile(src.ImageFile);
-                    
-                    if (dest.StockQuantity != src.StockQuantity)
-                        dest.UpdateStock(src.StockQuantity);
-
-                    // Handle categories
-                    var currentCategories = dest.Categories.ToList();
-                    if (!currentCategories.SequenceEqual(src.Categories))
-                    {
-                        dest.ClearCategories();
-                        if (src.Categories.Any())
-                        {
-                            dest.AddCategories(src.Categories);
-                        }
-                    }
-                });
         }
     }
 }

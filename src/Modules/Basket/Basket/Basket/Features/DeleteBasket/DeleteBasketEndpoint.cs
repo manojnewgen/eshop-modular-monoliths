@@ -1,6 +1,7 @@
 using Carter;
 using MediatR;
 using Mapster;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Basket.Basket.Features.DeleteBasket
 {
@@ -11,9 +12,10 @@ namespace Basket.Basket.Features.DeleteBasket
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapDelete("/baskets/{basketId:guid}", async (Guid basketId, ISender sender) =>
+            app.MapDelete("/baskets/{basketId:guid}", async (Guid basketId, [FromServices] ISender sender) =>
             {
-                var command = new DeleteBasketRequest(basketId);
+                var request = new DeleteBasketRequest(basketId);
+                var command = request.Adapt<DeleteBasketCommand>();
                 var result = await sender.Send(command);
                 var response = result.Adapt<DeleteBasketResponse>();
                 return Results.Ok(response);

@@ -5,6 +5,7 @@ using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Catalog.Products.Features.SearchProducts
 {
@@ -37,7 +38,7 @@ namespace Catalog.Products.Features.SearchProducts
                 bool? inStock,
                 int pageNumber,
                 int pageSize,
-                ISender sender) =>
+                [FromServices] ISender sender) =>
             {
                 var categoryList = !string.IsNullOrEmpty(categories) 
                     ? categories.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()

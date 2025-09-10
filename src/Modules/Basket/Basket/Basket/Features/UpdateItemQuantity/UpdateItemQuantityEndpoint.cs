@@ -2,6 +2,7 @@ using Carter;
 using MediatR;
 using Mapster;
 using Basket.Basket.DTOs;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Basket.Basket.Features.UpdateItemQuantity
 {
@@ -17,9 +18,10 @@ namespace Basket.Basket.Features.UpdateItemQuantity
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapPut("/baskets/{basketId:guid}/items/quantity", async (Guid basketId, UpdateItemQuantityRequest request, ISender sender) =>
+            app.MapPut("/baskets/{basketId:guid}/items/quantity", async (Guid basketId, [FromBody] UpdateItemQuantityRequest request, [FromServices] ISender sender) =>
             {
                 var command = request.Adapt<UpdateItemQuantityCommand>();
+                command = command with { BasketId = basketId }; // Ensure basketId from route is used
                 var result = await sender.Send(command);
                 var response = result.Adapt<UpdateItemQuantityResponse>();
                 return Results.Ok(response);
