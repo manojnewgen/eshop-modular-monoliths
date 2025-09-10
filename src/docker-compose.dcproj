@@ -60,6 +60,7 @@
     <None Include="eShop-ModularMonolith.sln" />
     <None Include="Examples\SchemaIsolation\SCHEMA-ISOLATION-GUIDE.md" />
     <None Include="Examples\SchemaIsolation\SchemaIsolationDemo.cs" />
+    <None Include="fix-port-conflict-complete.bat" />
     <None Include="fix-port-conflict.bat" />
     <None Include="init-scripts\01-init-database.sh" />
     <None Include="keycloak-config.bat" />
@@ -71,6 +72,7 @@
     <None Include="pgadmin-keycloak-guide.bat" />
     <None Include="PostgreSQL-Health-Fix.md" />
     <None Include="quick-fix.bat" />
+    <None Include="rebuild-and-restart.bat" />
     <None Include="SaveChanges-Interceptor-Guide.md" />
     <None Include="SaveChanges-Interceptor-Summary.md" />
     <None Include="Scripts\CleanupGlobalUsings.ps1" />
