@@ -6,5 +6,6 @@ namespace Catalog.Products.Events
         Guid ProductId,
         decimal OldPrice,
         decimal NewPrice,
+        Product Product,
         string Reason) : BaseDomainEvent;
 }

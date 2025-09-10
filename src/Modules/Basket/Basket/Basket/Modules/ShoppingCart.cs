@@ -1,6 +1,6 @@
 ﻿namespace Basket.Basket.Modules
 {
-    public class ShoppingCart: Aggregate<Guid>
+    public class ShoppingCart : Aggregate<Guid>
     {
         public string UserName { get; private set; } = default!;
 
@@ -45,5 +45,7 @@
                 //AddDomainEvent(new ShoppingCartItemRemovedEvent(this, productId));
             }
         }
+
+
     }
 }

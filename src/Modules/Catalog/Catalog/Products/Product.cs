@@ -23,6 +23,8 @@ namespace Catalog.Products
         public DateTime? DeletedAt { get; private set; }
         public string? DeletedBy { get; private set; }
 
+        public string Category {  get; private set; }
+
         // Required for EF Core
         private Product() { }
 

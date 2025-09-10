@@ -65,6 +65,8 @@ services:
       ConnectionStrings__OrderingConnection: "Host=eshop-db;Port=5432;Database=${POSTGRES_DB:-eshopdb};Username=${POSTGRES_USER:-eshopuser};Password=${POSTGRES_PASSWORD};Include Error Detail=true"
       # Redis Configuration
       ConnectionStrings__Redis: "eshop-redis:6379"
+      # RabbitMQ Configuration
+      ConnectionStrings__MessageBus: "amqp://guest:guest@messagebus:5672/"
       # Logging
       Logging__LogLevel__Default: ${LOG_LEVEL:-Information}
       Logging__LogLevel__Microsoft: Warning
@@ -76,6 +78,8 @@ services:
       eshop-db:
         condition: service_healthy
       eshop-redis:
+        condition: service_healthy
+      messagebus:
         condition: service_healthy
     networks:
       - eshop-network
@@ -122,6 +126,31 @@ services:
     networks:
       - eshop-network
 
+  # RabbitMQ Message Bus
+  messagebus:
+    image: rabbitmq:3.12-management
+    platform: linux/amd64
+    container_name: eshop-messagebus
+    hostname: eshop-mq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - eshop-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
 networks:
   eshop-network:
     driver: bridge
@@ -140,3 +169,6 @@ volumes:
   seq_data:
     driver: local
     name: eshop_seq_data
+  rabbitmq_data:
+    driver: local
+    name: eshop_rabbitmq_data

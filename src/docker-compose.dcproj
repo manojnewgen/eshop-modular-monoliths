@@ -17,12 +17,14 @@
     <ProjectReference Include="Shared\Shared.Contracts\Shared.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <None Include=".env.example" />
     <None Include=".env.template" />
     <None Include=".gitignore" />
     <None Include="Complete-Product-Handlers-Guide.md" />
     <None Include="Configuration\appsettings.Development.json" />
     <None Include="Configuration\appsettings.Production.json" />
     <None Include="Configuration\appsettings.Serilog.json" />
+    <None Include="docker-commands.md" />
     <None Include="docker-compose.logging.yml" />
     <None Include="docker-compose.override.yml">
       <DependentUpon>docker-compose.yml</DependentUpon>

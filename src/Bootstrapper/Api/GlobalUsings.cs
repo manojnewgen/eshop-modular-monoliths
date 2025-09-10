@@ -19,6 +19,8 @@ global using Microsoft.AspNetCore.Mvc;
 // Entity Framework
 global using Microsoft.EntityFrameworkCore;
 
+global using Shared.Messaging.Extensions;
+
 // Third-party packages
 global using MediatR;
 global using Mapster;

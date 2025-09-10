@@ -1,7 +1,7 @@
 using Basket.Basket.DTOs;
 using Basket.Data.Repositories;
-using Catalog.Contracts.Products.DTOs;
 using Catalog.Contracts.Products.Features.GetProductById;
+using Catalog.Products.Dtos;
 using Shared.Exceptions;
 using System;
 using System.Threading;

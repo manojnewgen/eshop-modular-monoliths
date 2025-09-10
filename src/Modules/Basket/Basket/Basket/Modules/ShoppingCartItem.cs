@@ -38,5 +38,11 @@ namespace Basket.Basket.Modules
             Color = color;
             ShoppingCartId = shoppingCartId;
         }
+
+        public void UpdatePrice(decimal newPrice)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(newPrice);
+            Price = newPrice;
+        }
     }
 }

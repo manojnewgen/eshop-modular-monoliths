@@ -12,6 +12,8 @@ global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Logging;
 global using Microsoft.Extensions.Configuration;
 
+global using MassTransit;
+global using Shared.Messaging.Events;
 // ASP.NET Core
 global using Microsoft.AspNetCore.Builder;
 global using Microsoft.AspNetCore.Http;
