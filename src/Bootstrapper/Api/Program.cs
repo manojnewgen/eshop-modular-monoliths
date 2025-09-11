@@ -8,7 +8,8 @@ using Carter;
 using Shared.Behaviors;
 using Microsoft.OpenApi.Models;
 using System.Text.Json;
-using FluentValidation; // ADDED: For validator registration
+using FluentValidation;
+using Keycloak.AuthServices.Authentication; // ADDED: For validator registration
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,20 +63,22 @@ builder.Services.AddAuthentication("Bearer")
         }
     });
 
-builder.Services.AddAuthorization(options =>
-{
-    // Add default policy requiring authentication for all endpoints except explicitly allowed
-    options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
-        .Build();
+ builder.Services.AddKeycloakWebApiAuthentication(builder.Configuration);
+
+//builder.Services.AddAuthorization(options =>
+//{
+//    // Add default policy requiring authentication for all endpoints except explicitly allowed
+//    options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+//        .RequireAuthenticatedUser()
+//        .Build();
         
-    // Add custom policies as needed
-    options.AddPolicy("AdminOnly", policy => 
-        policy.RequireClaim("realm_access", "admin"));
+//    // Add custom policies as needed
+//    options.AddPolicy("AdminOnly", policy => 
+//        policy.RequireClaim("realm_access", "admin"));
         
-    options.AddPolicy("UserAccess", policy => 
-        policy.RequireClaim("realm_access", "user"));
-});
+//    options.AddPolicy("UserAccess", policy => 
+//        policy.RequireClaim("realm_access", "user"));
+//});
 
 // Common services: Carter, MediatR, FluentValidation
 builder.Services.AddCarterWithAssemblies(moduleAssemblies);

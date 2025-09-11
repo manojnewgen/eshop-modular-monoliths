@@ -17,10 +17,20 @@
     <ProjectReference Include="Shared\Shared.Contracts\Shared.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <None Include=".env.example" />
     <None Include="Configuration\appsettings.Development.json" />
     <None Include="Configuration\appsettings.Production.json" />
     <None Include="Configuration\appsettings.Serilog.json" />
     <None Include="database-schema-setup.sql" />
+    <None Include="docker-compose.override.yml">
+      <DependentUpon>docker-compose.yml</DependentUpon>
+    </None>
+    <None Include="docker-compose.prod.yml" />
+    <None Include="docker-compose.yml" />
+    <None Include="docker-manage.bat" />
+    <None Include="docker-manage.sh" />
+    <None Include="DOCKER-README.md" />
+    <None Include="DOCKER-STATUS.md" />
     <None Include="Mapster-Integration-Guide.md" />
   </ItemGroup>
 </Project>

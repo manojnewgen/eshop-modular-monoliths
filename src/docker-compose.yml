@@ -1,0 +1,145 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: eshop-postgres
+    environment:
+      POSTGRES_DB: eshopdb
+      POSTGRES_USER: eshopuser
+      POSTGRES_PASSWORD: EShop123!
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - eshop-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eshopuser -d eshopdb"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: eshop-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - eshop-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: eshop-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_VHOST: /dev
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - eshop-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Keycloak Identity Server - STANDARDIZED CONFIGURATION
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: eshop-keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/eshopdb
+      KC_DB_USERNAME: eshopuser
+      KC_DB_PASSWORD: EShop123!
+      KC_HOSTNAME_STRICT: false
+      KC_HTTP_ENABLED: true
+    ports:
+      - "9090:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - eshop-network
+    command: ["start-dev"]
+    restart: unless-stopped
+
+  # Seq Logging
+  seq:
+    image: datalust/seq:2024.1
+    container_name: eshop-seq
+    environment:
+      ACCEPT_EULA: Y
+    ports:
+      - "5341:80"
+    volumes:
+      - seq_data:/data
+    networks:
+      - eshop-network
+    restart: unless-stopped
+
+  # Main API Application
+  api:
+    build:
+      context: .
+      dockerfile: Bootstrapper/Api/Dockerfile
+    container_name: eshop-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=eshopdb;Username=eshopuser;Password=EShop123!;SearchPath=shared,public;Include Error Detail=true"
+      ConnectionStrings__CatalogConnection: "Host=postgres;Port=5432;Database=eshopdb;Username=eshopuser;Password=EShop123!;SearchPath=catalog,shared,public;Include Error Detail=true"
+      ConnectionStrings__BasketConnection: "Host=postgres;Port=5432;Database=eshopdb;Username=eshopuser;Password=EShop123!;SearchPath=basket,shared,public;Include Error Detail=true"
+      ConnectionStrings__OrderingConnection: "Host=postgres;Port=5432;Database=eshopdb;Username=eshopuser;Password=EShop123!;SearchPath=ordering,shared,public;Include Error Detail=true"
+      ConnectionStrings__IdentityConnection: "Host=postgres;Port=5432;Database=eshopdb;Username=eshopuser;Password=EShop123!;SearchPath=identity,public;Include Error Detail=true"
+      ConnectionStrings__Redis: "redis:6379"
+      ConnectionStrings__MessageBus: "amqp://guest:guest@rabbitmq:5672/"
+      MessageBroker__Host: "amqp://rabbitmq:5672"
+      MessageBroker__UserName: "guest"
+      MessageBroker__Password: "guest"
+      MessageBroker__VirtualHost: "/dev"
+      Keycloak__auth-server-url: "http://keycloak:8080"
+      Authentication__Keycloak__Authority: "http://localhost:9090/realms/myrealm"
+      Authentication__Keycloak__Audience: "myclient"
+      Authentication__Keycloak__RequireHttpsMetadata: "false"
+      Authentication__Keycloak__ValidateAudience: "false"
+      Authentication__Keycloak__ValidateIssuer: "true"
+      Seq__ServerUrl: "http://seq:80"
+    ports:
+      - "5000:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - eshop-network
+    volumes:
+      - ./Configuration:/app/Configuration:ro
+
+networks:
+  eshop-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  seq_data:

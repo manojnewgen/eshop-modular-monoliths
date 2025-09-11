@@ -1,0 +1,46 @@
+services:
+  postgres:
+    environment:
+      POSTGRES_DB: eshopdb  # Use consistent database name
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Use same volume name
+
+  api:
+    build:
+      target: base
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      # Enable detailed logging for development
+      Logging__LogLevel__Default: Information
+      Logging__LogLevel__Microsoft: Warning
+      Logging__LogLevel__Microsoft.Hosting.Lifetime: Information
+      # Seq logging configuration
+      Seq__ApiKey: ""
+      Seq__ServerUrl: "http://seq:80"
+      Seq__MinimumLevel: Information
+      # Use consistent database names
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=eshopdb;Username=eshopuser;Password=EShop123!;SearchPath=shared,public;Include Error Detail=true"
+      ConnectionStrings__CatalogConnection: "Host=postgres;Port=5432;Database=eshopdb;Username=eshopuser;Password=EShop123!;SearchPath=catalog,shared,public;Include Error Detail=true"
+      ConnectionStrings__BasketConnection: "Host=postgres;Port=5432;Database=eshopdb;Username=eshopuser;Password=EShop123!;SearchPath=basket,shared,public;Include Error Detail=true"
+      ConnectionStrings__OrderingConnection: "Host=postgres;Port=5432;Database=eshopdb;Username=eshopuser;Password=EShop123!;SearchPath=ordering,shared,public;Include Error Detail=true"
+      ConnectionStrings__IdentityConnection: "Host=postgres;Port=5432;Database=eshopdb;Username=eshopuser;Password=EShop123!;SearchPath=identity,public;Include Error Detail=true"
+      # RESTORED: Your exact Keycloak configuration matching your created realm and client
+      Authentication__Keycloak__Authority: "http://localhost:9090/realms/myrealm"
+      Authentication__Keycloak__Audience: "myclient"
+      Authentication__Keycloak__RequireHttpsMetadata: "false"
+      Authentication__Keycloak__ValidateAudience: "false"
+      Authentication__Keycloak__ValidateIssuer: "true"
+    volumes:
+      # Mount source code for hot reload in development
+      - ./:/src:cached
+    ports:
+      - "5000:8080"
+      - "5001:8081"
+
+  keycloak:
+    environment:
+      # FIXED: Use correct database name
+      KC_DB_URL: jdbc:postgresql://postgres:5432/eshopdb
+
+volumes:
+  postgres_data:

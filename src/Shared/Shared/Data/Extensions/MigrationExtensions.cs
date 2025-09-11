@@ -43,6 +43,9 @@ namespace Shared.Data.Extensions
                     return app;
                 }
 
+                // Ensure schemas exist before applying migrations
+                await EnsureSchemasExist(context, logger, contextName);
+
                 // Apply migrations with retry logic
                 await ApplyMigrationsWithRetry(context, logger, contextName, retryCount, retryDelay);
 
@@ -71,9 +74,81 @@ namespace Shared.Data.Extensions
             return app;
         }
 
+        /// <summary>
+        /// Ensures all required schemas exist in the database
+        /// </summary>
+        private static async Task EnsureSchemasExist<TContext>(TContext context, ILogger logger, string contextName) 
+            where TContext : DbContext
+        {
+            try
+            {
+                logger.LogInformation("Ensuring schemas exist for {ContextName}", contextName);
+
+                var schemas = new[] { "catalog", "basket", "ordering", "identity", "shared", "messaging" };
+
+                foreach (var schema in schemas)
+                {
+                    // Fix for CS1039 and CS1002: Close the string literal and add the missing semicolon
+                    var schemaExistsQuery = $"SELECT EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = '{schema}');";
+                    var connection = context.Database.GetDbConnection();
+                    
+                    if (connection.State != System.Data.ConnectionState.Open)
+                        await connection.OpenAsync();
+
+                    using var command = connection.CreateCommand();
+                    command.CommandText = schemaExistsQuery;
+                    
+                    var exists = (bool)(await command.ExecuteScalarAsync() ?? false);
+                    
+                    if (!exists)
+                    {
+                        logger.LogInformation("Creating schema: {Schema}", schema);
+                        command.CommandText = $"CREATE SCHEMA IF NOT EXISTS {schema}";
+                        await command.ExecuteNonQueryAsync();
+                    }
+                }
+
+                // Create extensions if needed
+                await EnsureExtensionsExist(context, logger);
+                
+                logger.LogInformation("Schema creation completed for {ContextName}", contextName);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error ensuring schemas exist for {ContextName}", contextName);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Ensures required PostgreSQL extensions exist
+        /// </summary>
+        private static async Task EnsureExtensionsExist<TContext>(TContext context, ILogger logger) 
+            where TContext : DbContext
+        {
+            try
+            {
+                var extensions = new[] { "uuid-ossp", "pg_trgm" };
+                var connection = context.Database.GetDbConnection();
+
+                foreach (var extension in extensions)
+                {
+                    using var command = connection.CreateCommand();
+                    command.CommandText = $"CREATE EXTENSION IF NOT EXISTS \"{extension}\"";
+                    await command.ExecuteNonQueryAsync();
+                    logger.LogDebug("Ensured extension exists: {Extension}", extension);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Could not create extensions (this may be normal if user lacks permissions)");
+            }
+        }
+
         private static void seedData<TContext>(TContext context, IServiceProvider services) where TContext : DbContext
         {
-            throw new NotImplementedException();
+            // Implementation for seeding initial data can be added here
+            // This is called after successful migration
         }
 
         /// <summary>
