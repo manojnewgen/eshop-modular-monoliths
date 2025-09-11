@@ -19,6 +19,64 @@ var orderingAssembly = typeof(OrderingModule).Assembly; // Added missing orderin
 
 var moduleAssemblies = new[] { catalogAssembly, basketAssembly, orderingAssembly };
 
+// ADDED: Authentication and Authorization Configuration
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", options =>
+    {
+        var keycloakConfig = builder.Configuration.GetSection("Authentication:Keycloak");
+        
+        options.Authority = keycloakConfig["Authority"]; // http://localhost:9090/realms/eshop
+        options.Audience = keycloakConfig["Audience"];   // eshop-api
+        options.RequireHttpsMetadata = keycloakConfig.GetValue<bool>("RequireHttpsMetadata", false);
+        
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = keycloakConfig.GetValue<bool>("ValidateIssuer", true),
+            ValidateAudience = keycloakConfig.GetValue<bool>("ValidateAudience", false),
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.FromMinutes(5) // Allow 5 minutes clock skew
+        };
+
+        // Development-specific settings
+        if (builder.Environment.IsDevelopment())
+        {
+            options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+            {
+                OnAuthenticationFailed = context =>
+                {
+                    builder.Services.BuildServiceProvider()
+                        .GetRequiredService<ILogger<Program>>()
+                        .LogError("Authentication failed: {Error}", context.Exception.Message);
+                    return Task.CompletedTask;
+                },
+                OnTokenValidated = context =>
+                {
+                    builder.Services.BuildServiceProvider()
+                        .GetRequiredService<ILogger<Program>>()
+                        .LogInformation("Token validated for user: {User}", 
+                            context.Principal?.Identity?.Name ?? "Unknown");
+                    return Task.CompletedTask;
+                }
+            };
+        }
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    // Add default policy requiring authentication for all endpoints except explicitly allowed
+    options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+        
+    // Add custom policies as needed
+    options.AddPolicy("AdminOnly", policy => 
+        policy.RequireClaim("realm_access", "admin"));
+        
+    options.AddPolicy("UserAccess", policy => 
+        policy.RequireClaim("realm_access", "user"));
+});
+
 // Common services: Carter, MediatR, FluentValidation
 builder.Services.AddCarterWithAssemblies(moduleAssemblies);
 // CHANGED: Use the correct extension method that properly registers pipeline behaviors
@@ -69,6 +127,31 @@ if (!builder.Environment.IsProduction())
             {
                 Name = "eShop Team",
                 Email = "support@eshop.com"
+            }
+        });
+        
+        // ADDED: JWT Bearer configuration for Swagger
+        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer {token}'",
+            Name = "Authorization",
+            In = ParameterLocation.Header,
+            Type = SecuritySchemeType.ApiKey,
+            Scheme = "Bearer"
+        });
+
+        c.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                Array.Empty<string>()
             }
         });
         
@@ -144,6 +227,8 @@ if (app.Environment.IsDevelopment())
         c.RoutePrefix = "swagger";
         c.DisplayRequestDuration();
         c.EnableTryItOutByDefault();
+        c.OAuthClientId("eshop-api"); // For Keycloak integration
+        c.OAuthRealm("eshop");
     });
     app.UseCors("Development");
 }
@@ -166,6 +251,10 @@ app.UseHttpsRedirection();
 
 // Exception handling middleware (must be early in the pipeline)
 app.UseExceptionHandler();
+
+// ADDED: Authentication and Authorization middleware
+app.UseAuthentication(); // Must come before UseAuthorization
+app.UseAuthorization();
 
 // Database migrations with better error handling
 try
@@ -257,6 +346,13 @@ app.MapGet("/", (IWebHostEnvironment env, LinkGenerator linkGenerator, HttpConte
         Timestamp = DateTime.UtcNow,
         Server = Environment.MachineName,
         Framework = Environment.Version.ToString(),
+        Authentication = new
+        {
+            Enabled = true,
+            Provider = "Keycloak",
+            Authority = app.Configuration["Authentication:Keycloak:Authority"],
+            TokenEndpoint = $"{app.Configuration["Authentication:Keycloak:Authority"]}/protocol/openid_connect/token"
+        },
         Endpoints = new
         {
             Health = $"{baseUrl}/health",
@@ -276,7 +372,8 @@ app.MapGet("/", (IWebHostEnvironment env, LinkGenerator linkGenerator, HttpConte
     });
 })
 .WithName("GetApiInfo")
-.WithTags("System");
+.WithTags("System")
+.AllowAnonymous(); // Allow anonymous access to root endpoint
 
 // Graceful shutdown handling
 var appLifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
@@ -294,8 +391,9 @@ appLifetime.ApplicationStopped.Register(() =>
 try
 {
     app.Logger.LogInformation("?? Starting eShop Modular Monolith API");
-    app.Logger.LogInformation("?? Environment: {Environment}", app.Environment.EnvironmentName);
+    app.Logger.LogInformation("??? Environment: {Environment}", app.Environment.EnvironmentName);
     app.Logger.LogInformation("?? Content Root: {ContentRoot}", app.Environment.ContentRootPath);
+    app.Logger.LogInformation("?? Authentication: Enabled (Keycloak)");
     
     app.Run();
 }

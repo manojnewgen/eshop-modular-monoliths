@@ -1,0 +1,17 @@
+# Database Configuration
+DB_CONNECTION_STRING=Host=localhost;Database=EshopModularMonoliths;Username=postgres;Password=postgres
+
+# Redis Configuration
+REDIS_CONNECTION_STRING=localhost:6379
+
+# JWT Configuration
+JWT_SECRET_KEY=your-secret-key-here-make-it-at-least-32-characters-long
+JWT_ISSUER=EshopModularMonoliths
+JWT_AUDIENCE=EshopModularMonoliths
+
+# Application Configuration
+ASPNETCORE_ENVIRONMENT=Development
+ASPNETCORE_URLS=http://+:5000;https://+:5001
+
+# Logging
+SERILOG_MINIMUM_LEVEL=Information
